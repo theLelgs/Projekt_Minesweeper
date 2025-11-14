@@ -1,17 +1,18 @@
 ﻿using System.Numerics;
 using System.Text;
 //The symbols used by the map when displaying them. 
-List<char> Symbols = [' ', '1', '2', '3', '4', '5', '6', '7', '8', '۞'];
+List<char> Symbols = [' ', '1', '2', '3', '4', '5', '6', '7', '8', '۞', '?'];
 
 
 //To allow for more characters to be used in the console
+//looked this up tho
 Console.OutputEncoding = Encoding.UTF8;
 
 
 Dictionary<string, (int, int, int)> MapSizes = [];
 MapSizes["Small"] = (10, 10, 20);
-MapSizes["Medium"] = (20, 20, 50);
-MapSizes["Large"] = (30, 30,125);
+MapSizes["Medium"] = (20, 15, 50);
+MapSizes["Large"] = (25, 25,100);
 
 
 Console.WriteLine("Choose your map size: ");
@@ -65,8 +66,8 @@ if (Input.Key == ConsoleKey.D4)//Allows the user to make a custom board
 }
 string[] MapSizeKeyList = ["Small", "Medium", "Large", "Custom"];
 (int MaxX, int MaxY, int Minecount) = MapSizes[MapSizeKeyList[int.Parse(Input.KeyChar.ToString()) - 1]];
-int[,] Map= new int[MaxX,MaxY];
-
+int[,] Map = new int[MaxX, MaxY];
+List<(int, int)> FlagPositions = [];
 for (int a = 0; a < Minecount; a++) //Adds mines equal to the Minecount integer. No duplicates
     {
         int RandomX = Random.Shared.Next(MaxX);
@@ -84,11 +85,24 @@ for (int a = 0; a < Minecount; a++) //Adds mines equal to the Minecount integer.
 Console.Clear();
 WriteMap(Map, MaxX, MaxY);
 Console.ReadKey(true);
+
+for (int a = 0;a<MaxX;a++)
+{
+    for (int b = 0; b < MaxY; b++)
+    {
+        Console.CursorLeft = a;
+        Console.CursorTop = b;
+        Console.Write(Symbols[10]);
+    }
+}
+
 Vector2 CursorPos = new(MaxX / 2, MaxY / 2);
 Console.CursorLeft = (int)CursorPos.X;
 Console.CursorTop = (int)CursorPos.Y;
 
-while(Input.Key!=ConsoleKey.Escape)
+
+bool playing = true;
+while(Input.Key!=ConsoleKey.Escape&&playing)
 {
     Input = Console.ReadKey(true);
     //Moves the cursor on WASD input
@@ -111,10 +125,20 @@ while(Input.Key!=ConsoleKey.Escape)
     //Looks for mines in the surrounding 8 tiles on enter press
     if (Input.Key == ConsoleKey.Enter)
     {
-        //Moves cursor to bottom so that it doesn't write in the middle of the map
-        Console.CursorLeft = 0;
-        Console.CursorTop = MaxY + 2;
-        Console.Write(MineDetection(Map, (int)CursorPos.X, (int)CursorPos.Y));
+        RevealSquare(Map, (int)CursorPos.X, (int)CursorPos.Y);
+    }
+    if (Input.Key==ConsoleKey.Spacebar)
+    {
+        if (!FlagPositions.Contains(((int, int))(CursorPos.X, CursorPos.Y)))
+        {
+            Console.Write("T");
+            FlagPositions.Add(((int, int))(CursorPos.X, CursorPos.Y));
+        }
+        else
+        {
+            Console.Write("?");
+            FlagPositions.Remove(((int, int))(CursorPos.X, CursorPos.Y));
+        }
     }
     //Moves the cursor to it's correct position
     Console.CursorLeft = (int)CursorPos.X;
@@ -122,15 +146,65 @@ while(Input.Key!=ConsoleKey.Escape)
 }
 
 
-
-
-
-
-
-int MineDetection(int[,] Map, int XPos, int YPos) //Looks for mines in the 8 surrounding spaces, not checking if the square is out of bounds.
+void RevealSquare(int[,] Map, int XPos, int YPos)
+{
+    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X, (int)CursorPos.Y)]);
+        if (MineDetection(Map, (int)CursorPos.X, (int)CursorPos.Y)==0)
+        {
+            if (CursorPos.X != 0)
+            {
+                Console.CursorLeft = (int)CursorPos.X-1;
+                Console.CursorTop = (int)CursorPos.Y;
+                Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X - 1, (int)CursorPos.Y)]);
+                if (CursorPos.Y != 0)
+                {
+                    Console.CursorLeft = (int)CursorPos.X-1;
+                    Console.CursorTop = (int)CursorPos.Y-1;
+                    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X - 1, (int)CursorPos.Y - 1)]);
+                }
+                if (CursorPos.Y != Map.GetLength(1)-1)
+                {
+                    Console.CursorLeft = (int)CursorPos.X-1;
+                    Console.CursorTop = (int)CursorPos.Y+1;
+                    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X - 1, (int)CursorPos.Y + 1)]);
+                }
+            }
+            if (CursorPos.X != Map.GetLength(0) - 1)
+            {
+                Console.CursorLeft = (int)CursorPos.X+1;
+                Console.CursorTop = (int)CursorPos.Y;
+                Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X + 1, (int)CursorPos.Y)]);
+                if (CursorPos.Y != 0)
+                {
+                    Console.CursorLeft = (int)CursorPos.X+1;
+                    Console.CursorTop = (int)CursorPos.Y-1;
+                    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X + 1, (int)CursorPos.Y - 1)]);
+                }
+                if (CursorPos.Y != Map.GetLength(1)-1)
+                {
+                    Console.CursorLeft = (int)CursorPos.X+1;
+                    Console.CursorTop = (int)CursorPos.Y+1;
+                    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X + 1, (int)CursorPos.Y + 1)]);
+                }
+            }
+            if (CursorPos.Y != 0)
+            {
+                Console.CursorLeft = (int)CursorPos.X;
+                Console.CursorTop = (int)CursorPos.Y-1;
+                Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X, (int)CursorPos.Y - 1)]);
+            }
+            if (CursorPos.Y!=Map.GetLength(1)-1)
+            {
+                Console.CursorLeft = (int)CursorPos.X;
+                Console.CursorTop = (int)CursorPos.Y+1;
+                Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X, (int)CursorPos.Y+1)]);
+            }
+        }
+}
+static int MineDetection(int[,] Map, int XPos, int YPos) //Looks for mines in the 8 surrounding spaces, not checking if the square is out of bounds.
 {
     int output = 0;
-    if (Map[XPos,YPos]==9)
+    if (Map[XPos, YPos] == 9)
     {
         return 9;
     }
@@ -155,9 +229,9 @@ int MineDetection(int[,] Map, int XPos, int YPos) //Looks for mines in the 8 sur
             }
         }
     }
-    if (XPos != Map.GetLength(0)-1)
+    if (XPos != Map.GetLength(0) - 1)
     {
-       if (Map[XPos + 1, YPos] == 9)
+        if (Map[XPos + 1, YPos] == 9)
         {
             output++;
         }
@@ -174,37 +248,39 @@ int MineDetection(int[,] Map, int XPos, int YPos) //Looks for mines in the 8 sur
             {
                 output++;
             }
-        } 
+        }
     }
-    if (YPos!=0)
+    if (YPos != 0)
     {
-        if (Map[XPos,YPos-1]==9)
+        if (Map[XPos, YPos - 1] == 9)
         {
             output++;
         }
     }
-    if(YPos!=Map.GetLength(1)-1)
+    if (YPos != Map.GetLength(1) - 1)
     {
         if (Map[XPos, YPos + 1] == 9)
-        {   
+        {
             output++;
         }
     }
     return output;
 }
-void WriteMap(int[,] Map, int MaxX, int MaxY) //Writes out the map
+
+static void WriteMap(int[,] Map, int MaxX, int MaxY) //Writes out the map
 {
     for (int y = 0; y < MaxY; y++)
     {
         for (int x = 0; x < MaxX; x++)
         {
-            Console.Write(Symbols[Map[x, y]]);
+            // Console.Write(Symbols[Map[x, y]]);
+            Console.Write(" ");
             if (x == MaxX - 1)
             {
                 Console.Write("|\n");
             }
         }
-        if (y == MaxY - 1)
+        if (y == MaxY-1)
         {
             for (int x = 0; x < MaxX; x++)
             {
