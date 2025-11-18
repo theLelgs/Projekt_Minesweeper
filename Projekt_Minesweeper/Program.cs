@@ -3,7 +3,7 @@ using System.Text;
 using Raylib_cs;
 //The symbols used by the map when displaying them. 
 List<char> Symbols = [' ', '1', '2', '3', '4', '5', '6', '7', '8', '۞', '?'];
-
+List<(int X,int Y)> SurroundingSquares= [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)];
 
 //To allow for more characters to be used in the console
 //looked this up tho
@@ -16,7 +16,7 @@ Console.OutputEncoding = Encoding.UTF8;
 
 
 Dictionary<string, (int MaxX, int MaxY, int Bombs)> MapSizes = [];
-MapSizes["Small"] = (10, 10, 20);
+MapSizes["Small"] = (10, 10, 15);
 MapSizes["Medium"] = (20, 15, 50);
 MapSizes["Large"] = (25, 25, 100);
 
@@ -45,17 +45,19 @@ if (Input.Key == ConsoleKey.D4)//Allows the user to make a custom board
     Console.Clear();
     Console.WriteLine("How wide do you want the board to be?");
     string tempWidth = Console.ReadLine();
-    while (!int.TryParse(tempWidth, out Width))
+    while (!int.TryParse(tempWidth, out Width)||Width<=0||Width>120)
     {
         Console.Clear();
+        Console.WriteLine("How wide do you want the board to be?");
         tempWidth = Console.ReadLine();
     }
     Console.Clear();
     Console.WriteLine("How tall do you want the board to be?");
     string tempHeight = Console.ReadLine();
-    while (!int.TryParse(tempHeight, out Height))
+    while (!int.TryParse(tempHeight, out Height)||Height<=0||Height>30)
     {
         Console.Clear();
+        Console.WriteLine("How tall do you want the board to be?");
         tempHeight = Console.ReadLine();
     }
     Console.Clear();
@@ -64,9 +66,10 @@ if (Input.Key == ConsoleKey.D4)//Allows the user to make a custom board
     while (!int.TryParse(tempMines, out Mines) || Mines > Height * Width)
     {
         Console.Clear();
+        Console.WriteLine("How many mines do you want there to be?");
         tempMines = Console.ReadLine();
-        Console.Clear();
     }
+    Console.Clear();
     MapSizes["Custom"] = (Width, Height, Mines);
 
 }
@@ -94,7 +97,7 @@ for (int a = 0; a < Minecount; a++) //Adds mines equal to the Minecount integer.
     }
 
 Console.Clear();
-WriteMap(Map, MaxX, MaxY);
+WriteMap(MaxX, MaxY);
 Console.ReadKey(true);
 
 for (int a = 0;a<MaxX;a++)
@@ -137,8 +140,8 @@ while(playing&&Input.Key!=ConsoleKey.Escape)
         {
             CursorPos += new Vector2(1, 0);
         }
-    //Looks for mines in the surrounding 8 tiles on enter press
-    if (Input.Key == ConsoleKey.Enter&&!FlagPositions.Contains(((int,int))(CursorPos.X,CursorPos.Y)))
+    if (Input.Key == ConsoleKey.Enter&&!FlagPositions.Contains(((int,int))(CursorPos.X,CursorPos.Y)))    //Looks for mines in the surrounding 8 tiles on enter press
+
         {
             RevealSquare(Map, (int)CursorPos.X, (int)CursorPos.Y);
         }
@@ -154,12 +157,14 @@ while(playing&&Input.Key!=ConsoleKey.Escape)
             Console.Write("?");
             FlagPositions.Remove(((int, int))(CursorPos.X, CursorPos.Y));
         }
+        Console.CursorTop=0;
+        Console.CursorLeft=MaxX+13;
+        Console.Write(Minecount-FlagPositions.Count+"     ");
     }
-    //Moves the cursor to it's correct position
-    Console.CursorLeft = (int)CursorPos.X;
+    Console.CursorLeft = (int)CursorPos.X; //Moves the cursor to it's correct position
     Console.CursorTop = (int)CursorPos.Y;
-    //Check if player has won
-    if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY)
+    
+    if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY&&FlagPositions.Count==Minecount) //Check if player has won
     {
         playing=false;
     }
@@ -182,13 +187,12 @@ void RevealSquare(int[,] Map, int XPos, int YPos)
     Console.CursorLeft=XPos;
     Console.CursorTop=YPos;
     Console.Write(Symbols[MineDetection(Map, XPos,YPos)]);
-    if (!SquaresRevealed.Contains((XPos, YPos)))//Dont add to SquaresRevealed if it already contains it
+    if (!SquaresRevealed.Contains((XPos, YPos))&&MineDetection(Map,XPos,YPos)!=9)//Dont add to SquaresRevealed if it already contains it
     {
     SquaresRevealed.Add((XPos,YPos));
     }
     if (MineDetection(Map, XPos, YPos)==0)//Reveal all surrounding squares, rerunning RevealSquare on neighbouring 0
     {
-        List<(int X,int Y)> SurroundingSquares= [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)];
         foreach ((int,int) PositionMod in SurroundingSquares)
         {
             if (!(XPos+PositionMod.Item1>MaxX-1||XPos+PositionMod.Item1<0||YPos+PositionMod.Item2>MaxY-1||YPos+PositionMod.Item2<0)&&!SquaresRevealed.Contains((XPos+PositionMod.Item1,YPos+PositionMod.Item2)))
@@ -210,82 +214,40 @@ void RevealSquare(int[,] Map, int XPos, int YPos)
         Console.ReadKey(true);
     }
 }
-static int MineDetection(int[,] Map, int XPos, int YPos) //Looks for mines in the 8 surrounding spaces, not checking if the square is out of bounds.
+int MineDetection(int[,] Map, int XPos, int YPos)
 {
-    int output = 0;
+    int output=0;
     if (Map[XPos, YPos] == 9)
     {
         return 9;
     }
-    if (XPos != 0)
+    foreach ((int, int) PositionMod in SurroundingSquares)
     {
-        if (Map[XPos - 1, YPos] == 9)
+        if (!(XPos+PositionMod.Item1>MaxX-1||XPos+PositionMod.Item1<0||YPos+PositionMod.Item2>MaxY-1||YPos+PositionMod.Item2<0))
         {
-            output++;
-        }
-        if (YPos != 0)
-        {
-            if (Map[XPos - 1, YPos - 1] == 9)
+            if (Map[XPos+PositionMod.Item1, YPos+PositionMod.Item2]==9)
             {
                 output++;
             }
-        }
-        if (YPos != Map.GetLength(1) - 1)
-        {
-            if (Map[XPos - 1, YPos + 1] == 9)
-            {
-                output++;
-            }
-        }
-    }
-    if (XPos != Map.GetLength(0) - 1)
-    {
-        if (Map[XPos + 1, YPos] == 9)
-        {
-            output++;
-        }
-        if (YPos != 0)
-        {
-            if (Map[XPos + 1, YPos - 1] == 9)
-            {
-                output++;
-            }
-        }
-        if (YPos != Map.GetLength(1) - 1)
-        {
-            if (Map[XPos + 1, YPos + 1] == 9)
-            {
-                output++;
-            }
-        }
-    }
-    if (YPos != 0)
-    {
-        if (Map[XPos, YPos - 1] == 9)
-        {
-            output++;
-        }
-    }
-    if (YPos != Map.GetLength(1) - 1)
-    {
-        if (Map[XPos, YPos + 1] == 9)
-        {
-            output++;
         }
     }
     return output;
 }
-static void WriteMap(int[,] Map, int MaxX, int MaxY) //Writes out the map
+void WriteMap(int MaxX, int MaxY) //Writes out the map
 {
     for (int y = 0; y < MaxY; y++)
     {
         for (int x = 0; x < MaxX; x++)
         {
-            // Console.Write(Symbols[Map[x, y]]);
-            Console.Write(" ");
+            Console.Write("?");
             if (x == MaxX - 1)
             {
-                Console.Write("|\n");
+                Console.Write("|");
+                if (y==0)
+                {
+                    Console.Write($"Bombs left: {Minecount}");
+                }
+                Console.Write("\n");
             }
         }
         if (y == MaxY-1)
