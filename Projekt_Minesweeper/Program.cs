@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using System.Text;
+using Raylib_cs;
 //The symbols used by the map when displaying them. 
 List<char> Symbols = [' ', '1', '2', '3', '4', '5', '6', '7', '8', '۞', '?'];
 
@@ -7,6 +8,11 @@ List<char> Symbols = [' ', '1', '2', '3', '4', '5', '6', '7', '8', '۞', '?'];
 //To allow for more characters to be used in the console
 //looked this up tho
 Console.OutputEncoding = Encoding.UTF8;
+// Raylib.InitWindow(800,600,"MineSweeper");
+// Raylib.SetTargetFPS(60);
+// Raylib.ToggleBorderlessWindowed();
+
+
 
 
 Dictionary<string, (int MaxX, int MaxY, int Bombs)> MapSizes = [];
@@ -107,31 +113,35 @@ Console.CursorTop = (int)CursorPos.Y;
 
 
 bool playing = true;
-while(Input.Key!=ConsoleKey.Escape&&playing)
+// while(!Raylib.WindowShouldClose())
+
+// Raylib.BeginDrawing();
+// Raylib.ClearBackground(Color.SkyBlue);
+while(playing&&Input.Key!=ConsoleKey.Escape)
 {
     Input = Console.ReadKey(true);
     //Moves the cursor on WASD input
     if (Input.Key==ConsoleKey.W&&CursorPos.Y>0)
-    {
-        CursorPos -= new Vector2(0, 1);
-    }
+        {
+            CursorPos -= new Vector2(0, 1);
+        }
     if (Input.Key==ConsoleKey.A&&CursorPos.X>0)
-    {
-        CursorPos -= new Vector2(1, 0);
-    }
+        {
+            CursorPos -= new Vector2(1, 0);
+        }
     if (Input.Key==ConsoleKey.S&&CursorPos.Y<MaxY-1)
-    {
-        CursorPos += new Vector2(0, 1);
-    }
+        {
+            CursorPos += new Vector2(0, 1);
+        }
     if (Input.Key == ConsoleKey.D&&CursorPos.X<MaxX-1)
-    {
-        CursorPos += new Vector2(1, 0);
-    }
+        {
+            CursorPos += new Vector2(1, 0);
+        }
     //Looks for mines in the surrounding 8 tiles on enter press
     if (Input.Key == ConsoleKey.Enter&&!FlagPositions.Contains(((int,int))(CursorPos.X,CursorPos.Y)))
-    {
-        RevealSquare(Map, (int)CursorPos.X, (int)CursorPos.Y);
-    }
+        {
+            RevealSquare(Map, (int)CursorPos.X, (int)CursorPos.Y);
+        }
     if (Input.Key==ConsoleKey.Spacebar&&!SquaresRevealed.Contains(((int,int))(CursorPos.X,CursorPos.Y)))
     {
         if (!FlagPositions.Contains(((int, int))(CursorPos.X, CursorPos.Y)))
@@ -148,18 +158,36 @@ while(Input.Key!=ConsoleKey.Escape&&playing)
     //Moves the cursor to it's correct position
     Console.CursorLeft = (int)CursorPos.X;
     Console.CursorTop = (int)CursorPos.Y;
+    //Check if player has won
+    if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY)
+    {
+        playing=false;
+    }
 }
+// Raylib.EndDrawing();
 
+Console.Clear();
+if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY)
+{
+    Console.WriteLine("You Win!");
+}
+else
+{
+    Console.WriteLine("You Lose!");
+}
+Console.ReadKey(true);
 
 void RevealSquare(int[,] Map, int XPos, int YPos)
 {
     Console.CursorLeft=XPos;
     Console.CursorTop=YPos;
     Console.Write(Symbols[MineDetection(Map, XPos,YPos)]);
-    SquaresRevealed.Add((XPos,YPos));
-    if (MineDetection(Map, XPos, YPos)==0)
+    if (!SquaresRevealed.Contains((XPos, YPos)))//Dont add to SquaresRevealed if it already contains it
     {
-        //Reveal all surrounding squares, rerunning RevealSquare on neighbouring 0
+    SquaresRevealed.Add((XPos,YPos));
+    }
+    if (MineDetection(Map, XPos, YPos)==0)//Reveal all surrounding squares, rerunning RevealSquare on neighbouring 0
+    {
         List<(int X,int Y)> SurroundingSquares= [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)];
         foreach ((int,int) PositionMod in SurroundingSquares)
         {
@@ -176,11 +204,12 @@ void RevealSquare(int[,] Map, int XPos, int YPos)
             }
         }
     }
+    if (MineDetection(Map, XPos, YPos)==9)//Detect if player revealed a mine
+    {
+        playing=false;
+        Console.ReadKey(true);
+    }
 }
-
-
-
-
 static int MineDetection(int[,] Map, int XPos, int YPos) //Looks for mines in the 8 surrounding spaces, not checking if the square is out of bounds.
 {
     int output = 0;
@@ -246,7 +275,6 @@ static int MineDetection(int[,] Map, int XPos, int YPos) //Looks for mines in th
     }
     return output;
 }
-
 static void WriteMap(int[,] Map, int MaxX, int MaxY) //Writes out the map
 {
     for (int y = 0; y < MaxY; y++)
