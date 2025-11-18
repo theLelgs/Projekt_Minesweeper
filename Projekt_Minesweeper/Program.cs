@@ -9,10 +9,10 @@ List<char> Symbols = [' ', '1', '2', '3', '4', '5', '6', '7', '8', '۞', '?'];
 Console.OutputEncoding = Encoding.UTF8;
 
 
-Dictionary<string, (int, int, int)> MapSizes = [];
+Dictionary<string, (int MaxX, int MaxY, int Bombs)> MapSizes = [];
 MapSizes["Small"] = (10, 10, 20);
 MapSizes["Medium"] = (20, 15, 50);
-MapSizes["Large"] = (25, 25,100);
+MapSizes["Large"] = (25, 25, 100);
 
 
 Console.WriteLine("Choose your map size: ");
@@ -67,7 +67,12 @@ if (Input.Key == ConsoleKey.D4)//Allows the user to make a custom board
 string[] MapSizeKeyList = ["Small", "Medium", "Large", "Custom"];
 (int MaxX, int MaxY, int Minecount) = MapSizes[MapSizeKeyList[int.Parse(Input.KeyChar.ToString()) - 1]];
 int[,] Map = new int[MaxX, MaxY];
+
 List<(int, int)> FlagPositions = [];
+List<(int,int)> SquaresRevealed = [];
+
+
+
 for (int a = 0; a < Minecount; a++) //Adds mines equal to the Minecount integer. No duplicates
     {
         int RandomX = Random.Shared.Next(MaxX);
@@ -123,11 +128,11 @@ while(Input.Key!=ConsoleKey.Escape&&playing)
         CursorPos += new Vector2(1, 0);
     }
     //Looks for mines in the surrounding 8 tiles on enter press
-    if (Input.Key == ConsoleKey.Enter)
+    if (Input.Key == ConsoleKey.Enter&&!FlagPositions.Contains(((int,int))(CursorPos.X,CursorPos.Y)))
     {
         RevealSquare(Map, (int)CursorPos.X, (int)CursorPos.Y);
     }
-    if (Input.Key==ConsoleKey.Spacebar)
+    if (Input.Key==ConsoleKey.Spacebar&&!SquaresRevealed.Contains(((int,int))(CursorPos.X,CursorPos.Y)))
     {
         if (!FlagPositions.Contains(((int, int))(CursorPos.X, CursorPos.Y)))
         {
@@ -148,59 +153,34 @@ while(Input.Key!=ConsoleKey.Escape&&playing)
 
 void RevealSquare(int[,] Map, int XPos, int YPos)
 {
-    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X, (int)CursorPos.Y)]);
-        if (MineDetection(Map, (int)CursorPos.X, (int)CursorPos.Y)==0)
+    Console.CursorLeft=XPos;
+    Console.CursorTop=YPos;
+    Console.Write(Symbols[MineDetection(Map, XPos,YPos)]);
+    SquaresRevealed.Add((XPos,YPos));
+    if (MineDetection(Map, XPos, YPos)==0)
+    {
+        //Reveal all surrounding squares, rerunning RevealSquare on neighbouring 0
+        List<(int X,int Y)> SurroundingSquares= [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)];
+        foreach ((int,int) PositionMod in SurroundingSquares)
         {
-            if (CursorPos.X != 0)
+            if (!(XPos+PositionMod.Item1>MaxX-1||XPos+PositionMod.Item1<0||YPos+PositionMod.Item2>MaxY-1||YPos+PositionMod.Item2<0)&&!SquaresRevealed.Contains((XPos+PositionMod.Item1,YPos+PositionMod.Item2)))
             {
-                Console.CursorLeft = (int)CursorPos.X-1;
-                Console.CursorTop = (int)CursorPos.Y;
-                Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X - 1, (int)CursorPos.Y)]);
-                if (CursorPos.Y != 0)
+                Console.CursorLeft=XPos+PositionMod.Item1;
+                Console.CursorTop=YPos+PositionMod.Item2;
+                SquaresRevealed.Add((XPos+PositionMod.Item1,YPos+PositionMod.Item2));
+                Console.Write(Symbols[MineDetection(Map, XPos+PositionMod.Item1, YPos+PositionMod.Item2)]);
+                if (MineDetection(Map, XPos+PositionMod.Item1, YPos+PositionMod.Item2)==0)
                 {
-                    Console.CursorLeft = (int)CursorPos.X-1;
-                    Console.CursorTop = (int)CursorPos.Y-1;
-                    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X - 1, (int)CursorPos.Y - 1)]);
+                    RevealSquare(Map,XPos+PositionMod.Item1,YPos+PositionMod.Item2);
                 }
-                if (CursorPos.Y != Map.GetLength(1)-1)
-                {
-                    Console.CursorLeft = (int)CursorPos.X-1;
-                    Console.CursorTop = (int)CursorPos.Y+1;
-                    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X - 1, (int)CursorPos.Y + 1)]);
-                }
-            }
-            if (CursorPos.X != Map.GetLength(0) - 1)
-            {
-                Console.CursorLeft = (int)CursorPos.X+1;
-                Console.CursorTop = (int)CursorPos.Y;
-                Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X + 1, (int)CursorPos.Y)]);
-                if (CursorPos.Y != 0)
-                {
-                    Console.CursorLeft = (int)CursorPos.X+1;
-                    Console.CursorTop = (int)CursorPos.Y-1;
-                    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X + 1, (int)CursorPos.Y - 1)]);
-                }
-                if (CursorPos.Y != Map.GetLength(1)-1)
-                {
-                    Console.CursorLeft = (int)CursorPos.X+1;
-                    Console.CursorTop = (int)CursorPos.Y+1;
-                    Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X + 1, (int)CursorPos.Y + 1)]);
-                }
-            }
-            if (CursorPos.Y != 0)
-            {
-                Console.CursorLeft = (int)CursorPos.X;
-                Console.CursorTop = (int)CursorPos.Y-1;
-                Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X, (int)CursorPos.Y - 1)]);
-            }
-            if (CursorPos.Y!=Map.GetLength(1)-1)
-            {
-                Console.CursorLeft = (int)CursorPos.X;
-                Console.CursorTop = (int)CursorPos.Y+1;
-                Console.Write(Symbols[MineDetection(Map, (int)CursorPos.X, (int)CursorPos.Y+1)]);
             }
         }
+    }
 }
+
+
+
+
 static int MineDetection(int[,] Map, int XPos, int YPos) //Looks for mines in the 8 surrounding spaces, not checking if the square is out of bounds.
 {
     int output = 0;
