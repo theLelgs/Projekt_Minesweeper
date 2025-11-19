@@ -61,20 +61,21 @@ for (int y = 0;y<MaxY;y++)
 List<(int, int)> FlagPositions = [];
 List<(int,int)> SquaresRevealed = [];
 List<(int,int)> SurroundingSquares= [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)];
-
+List<(int,int)> MinePositions = [];
 Texture2D[] Sprites = [Raylib.LoadTexture("img/SquareZero.png"),Raylib.LoadTexture("img/SquareOne.png"), Raylib.LoadTexture("img/SquareTwo.png"),Raylib.LoadTexture("img/SquareThree.png"), Raylib.LoadTexture("imt/SquareFour.png"), Raylib.LoadTexture("img/SquareFive.png"), Raylib.LoadTexture("img/SquareSix.png"), Raylib.LoadTexture("img/SquareSeven.png"), Raylib.LoadTexture("img/SquareEight.png"), Raylib.LoadTexture("img/SquareMine.png"), Raylib.LoadTexture("img/SquareUnknownFlag.png"), Raylib.LoadTexture("img/SquareUnknown.png")];
+
 
 for (int a = 0; a < Minecount; a++) //Adds mines equal to the Minecount integer. No duplicates
     {
         int RandomX = Random.Shared.Next(MaxX);
         int RandomY = Random.Shared.Next(MaxY);
-        while (Map[RandomX, RandomY] == 9)
+        while (MinePositions.Contains((RandomX, RandomY)))
         {
             RandomX = Random.Shared.Next(MaxX);
             RandomY = Random.Shared.Next(MaxY);
         }
 
-        Map[RandomX, RandomY] = 9;
+        MinePositions.Add((RandomX, RandomY));
 
     }
 Vector2 CursorPos = new(MaxX / 2, MaxY / 2);
@@ -109,11 +110,11 @@ while(!Raylib.WindowShouldClose()&&playing)
             {
                 CursorPos += new Vector2(1, 0);
             }
-    if (Raylib.IsKeyPressed(KeyboardKey.Enter)&&PlayerKnownMap[(int)CursorPos.X,(int)CursorPos.Y]!=10)    //Looks for mines in the surrounding 8 tiles on enter press
+    if ((Raylib.IsKeyPressed(KeyboardKey.Enter)||Raylib.IsMouseButtonPressed(MouseButton.Left))&&PlayerKnownMap[(int)CursorPos.X,(int)CursorPos.Y]!=10)    //Looks for mines in the surrounding 8 tiles on enter press
     {
-        RevealSquare(Map, (int)CursorPos.X, (int)CursorPos.Y);
+        RevealSquare((int)CursorPos.X, (int)CursorPos.Y);
     }
-    if (Raylib.IsKeyPressed(KeyboardKey.Space))
+    if (Raylib.IsKeyPressed(KeyboardKey.Space)||Raylib.IsMouseButtonPressed(MouseButton.Right))
     {
         if (PlayerKnownMap[(int)CursorPos.X,(int)CursorPos.Y]==11)
         {
@@ -126,52 +127,59 @@ while(!Raylib.WindowShouldClose()&&playing)
             FlagPositions.Remove(((int,int))(CursorPos.X, CursorPos.Y));
         }
     }
-        if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY&&FlagPositions.Count==Minecount) //Check if player has won
-        {
-            playing=false;
-        }
-        Raylib.EndDrawing(); 
+    if (Raylib.GetMouseDelta().Length()!=0)
+    {
+        CursorPos=Raylib.GetMousePosition()/25;
+    }
+    if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY&&FlagPositions.Count==Minecount) //Check if player has won
+    {
+        playing=false;
+    }
+    Raylib.EndDrawing(); 
 }
 if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY)
 {
     //WIN
+    
 }
 else
 {
+
     //LOSE
+    
 }
 
-void RevealSquare(int[,] Map, int XPos, int YPos)
+void RevealSquare(int XPos, int YPos)//Reveals the selected square, rerunning on adjacent squares if it's a 0
 {
-    if (!SquaresRevealed.Contains((XPos, YPos))&&MineDetection(Map,XPos,YPos)!=9)//Dont add to SquaresRevealed if it already contains it
+    if (!SquaresRevealed.Contains((XPos, YPos))&&MineDetection(MinePositions, XPos,YPos)!=9)//Dont add to SquaresRevealed if it already contains it
     {
     SquaresRevealed.Add((XPos,YPos));
     }
-    PlayerKnownMap[XPos,YPos]=MineDetection(Map,XPos,YPos);
-    if (MineDetection(Map, XPos, YPos)==0)//Reveal all surrounding squares, rerunning RevealSquare on neighbouring 0
+    PlayerKnownMap[XPos,YPos]=MineDetection(MinePositions, XPos,YPos);
+    if (MineDetection(MinePositions, XPos, YPos)==0)//Reveal all surrounding squares, rerunning RevealSquare on neighbouring 0
     {
         foreach ((int,int) PositionMod in SurroundingSquares)
         {
             if (!(XPos+PositionMod.Item1>MaxX-1||XPos+PositionMod.Item1<0||YPos+PositionMod.Item2>MaxY-1||YPos+PositionMod.Item2<0)&&!SquaresRevealed.Contains((XPos+PositionMod.Item1,YPos+PositionMod.Item2)))
             {
                 SquaresRevealed.Add((XPos+PositionMod.Item1,YPos+PositionMod.Item2));
-                PlayerKnownMap[XPos+PositionMod.Item1,YPos+PositionMod.Item2]=MineDetection(Map, XPos+PositionMod.Item1,YPos+PositionMod.Item2);
-                if (MineDetection(Map, XPos+PositionMod.Item1, YPos+PositionMod.Item2)==0)
+                PlayerKnownMap[XPos+PositionMod.Item1,YPos+PositionMod.Item2]=MineDetection(MinePositions, XPos+PositionMod.Item1,YPos+PositionMod.Item2);
+                if (MineDetection(MinePositions, XPos+PositionMod.Item1, YPos+PositionMod.Item2)==0)
                 {
-                    RevealSquare(Map,XPos+PositionMod.Item1,YPos+PositionMod.Item2);
+                    RevealSquare(XPos+PositionMod.Item1,YPos+PositionMod.Item2);
                 }
             }
         }
     }
-    if (MineDetection(Map, XPos, YPos)==9)//Detect if player revealed a mine
+    if (MineDetection(MinePositions, XPos, YPos)==9)//Detect if player revealed a mine
     {
         playing=false;
     }
 }
-int MineDetection(int[,] Map, int XPos, int YPos)
+int MineDetection(List<(int,int)> MinePositions, int XPos, int YPos)//Looks for mines in the surrounding 8 tiles
 {
     int output=0;
-    if (Map[XPos, YPos] == 9)
+    if (MinePositions.Contains((XPos,YPos)))
     {
         return 9;
     }
@@ -179,7 +187,7 @@ int MineDetection(int[,] Map, int XPos, int YPos)
     {
         if (!(XPos+PositionMod.Item1>MaxX-1||XPos+PositionMod.Item1<0||YPos+PositionMod.Item2>MaxY-1||YPos+PositionMod.Item2<0))
         {
-            if (Map[XPos+PositionMod.Item1, YPos+PositionMod.Item2]==9)
+            if (MinePositions.Contains((XPos+PositionMod.Item1, YPos+PositionMod.Item2)))
             {
                 output++;
             }
