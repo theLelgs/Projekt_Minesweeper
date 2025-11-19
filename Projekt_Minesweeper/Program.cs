@@ -15,7 +15,6 @@ int MaxWidth = Raylib.GetMonitorWidth(0);// Get monitor width from monitor 0
 int MaxHeight = Raylib.GetMonitorHeight(0);
 Raylib.CloseWindow();
 
-
 //Allow user to choose the size of the board and the amount of mines.
 Console.Clear();
 Console.WriteLine($"Choose a map width. Maximum width is {MaxWidth/25-1}, and the minimum is 10");//Added buffer of one to prevent mouse offset
@@ -43,7 +42,11 @@ while (!int.TryParse(Minestring, out Minecount)||Minecount<1)
     Minestring=Console.ReadLine();
 }
 
+Raylib.InitWindow(25*MaxX,25*MaxY,"MineSweeper");
+Raylib.SetTargetFPS(60);
 
+//Defining every variable
+bool playing = true;
 
 Texture2D[] Sprites = [Raylib.LoadTexture("img/SquareZero.png"),Raylib.LoadTexture("img/SquareOne.png"), Raylib.LoadTexture("img/SquareTwo.png"),Raylib.LoadTexture("img/SquareThree.png"), Raylib.LoadTexture("img/SquareFour.png"), Raylib.LoadTexture("img/SquareFive.png"), Raylib.LoadTexture("img/SquareSix.png"), Raylib.LoadTexture("img/SquareSeven.png"), Raylib.LoadTexture("img/SquareEight.png"), Raylib.LoadTexture("img/SquareMine.png"), Raylib.LoadTexture("img/SquareUnknownFlag.png"), Raylib.LoadTexture("img/SquareUnknown.png")];
 int[,] PlayerKnownMap = new int[MaxX, MaxY];
@@ -73,11 +76,6 @@ for (int y = 0;y<MaxY;y++)//Adds the unknown square to all slots in the player k
         PlayerKnownMap[x,y]=11;
     }
 }
-bool playing = true;
-
-Raylib.InitWindow(25*MaxX,25*MaxY,"MineSweeper");
-Raylib.SetTargetFPS(60);
-
 
 while(!Raylib.WindowShouldClose()&&playing)
 {
@@ -128,7 +126,7 @@ while(!Raylib.WindowShouldClose()&&playing)
     }
     if (Raylib.GetMouseDelta().Length()!=0)//Set CursorPos to the position of the mouse whenever the mouse moves
     {
-        CursorPos=Raylib.GetMousePosition()/25;
+        CursorPos=new Vector2(Math.Min(MaxX-1, Raylib.GetMouseX()/25), Math.Min(MaxY-1, Raylib.GetMouseY()/25));
     }
     if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY&&FlagPositions.Count==Minecount) //Check if player has won
     {
