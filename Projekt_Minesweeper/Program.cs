@@ -9,32 +9,32 @@ using Raylib_cs;
 //10 = Flag
 //11 = Unknown
 
-
-//To allow for more characters to be used in the console
-//looked this up tho
-// Console.OutputEncoding = Encoding.UTF8;
-Raylib.InitWindow(25,25,"Temporary");
-int monitor = Raylib.GetCurrentMonitor();
-int MaxWidth = Raylib.GetMonitorWidth(monitor);
-int MaxHeight = Raylib.GetMonitorHeight(monitor);
+//Getting the monitor size to calculate the maximum of mines that can fit on screen
+Raylib.InitWindow(0,0,"Temporary"); //I could only get monitor width/height on a screen with an active window
+int MaxWidth = Raylib.GetMonitorWidth(0);// Get monitor width from monitor 0
+int MaxHeight = Raylib.GetMonitorHeight(0);
 Raylib.CloseWindow();
+
+
+//Allow user to choose the size of the board and the amount of mines.
 Console.Clear();
-Console.WriteLine($"Choose a map width. Maximum width is {MaxWidth/25-2}, and the minimum is 10");
-int width;
-int height;
+Console.WriteLine($"Choose a map width. Maximum width is {MaxWidth/25-1}, and the minimum is 10");//Added buffer of one to prevent mouse offset
+int MaxX;
+int MaxY;
 int Minecount;
-string widthString = Console.ReadLine();
-while (!int.TryParse(widthString, out width)||width>MaxWidth/25-2||width<10)
+string WidthString = Console.ReadLine();
+
+while (!int.TryParse(WidthString, out MaxX)||MaxX>MaxWidth/25-1||MaxX<10) //Make sure the amount chosen is withing certain limits and a number
 {
-    widthString = Console.ReadLine();
+    WidthString = Console.ReadLine();
 }
-Console.WriteLine($"Choose a map height. Maximum width is {MaxHeight/25-2}, and the minimum is 1");
-string heightString = Console.ReadLine();
-while (!int.TryParse(heightString, out height)||height>MaxHeight/25-2||height<1)
+Console.WriteLine($"Choose a map height. Maximum width is {MaxHeight/25-1}, and the minimum is 1");  //Make sure the amount chosen is withing certain limits and a number
+string HeightString = Console.ReadLine();
+while (!int.TryParse(HeightString, out MaxY)||MaxY>MaxHeight/25-1||MaxY<1)
 {
-    heightString = Console.ReadLine();
+    HeightString = Console.ReadLine();
 }
-Console.WriteLine($"Choose a number of mines. Maximum is {width*height} and the minimum is 1");
+Console.WriteLine($"Choose a number of mines. Maximum is {MaxX*MaxY} and the minimum is 1");  //Make sure the amount chosen is withing certain limits and a number
 string Minestring = Console.ReadLine();
 while (!int.TryParse(Minestring, out Minecount)||Minecount<1)
 {
@@ -42,10 +42,8 @@ while (!int.TryParse(Minestring, out Minecount)||Minecount<1)
 }
 
 
-Raylib.InitWindow(25*width,25*height,"MineSweeper");
+Raylib.InitWindow(25*MaxX,25*MaxY,"MineSweeper");
 Raylib.SetTargetFPS(60);
-int MaxX = width;
-int MaxY=height;
 
 
 int[,] Map = new int[MaxX, MaxY];
@@ -110,11 +108,11 @@ while(!Raylib.WindowShouldClose()&&playing)
             {
                 CursorPos += new Vector2(1, 0);
             }
-    if ((Raylib.IsKeyPressed(KeyboardKey.Enter)||Raylib.IsMouseButtonPressed(MouseButton.Left))&&PlayerKnownMap[(int)CursorPos.X,(int)CursorPos.Y]!=10)    //Looks for mines in the surrounding 8 tiles on enter press
+    if ((Raylib.IsKeyPressed(KeyboardKey.Enter)||Raylib.IsMouseButtonPressed(MouseButton.Left))&&PlayerKnownMap[(int)CursorPos.X,(int)CursorPos.Y]!=10)    //Looks for mines in the surrounding 8 tiles on enter/left click
     {
         RevealSquare((int)CursorPos.X, (int)CursorPos.Y);
     }
-    if (Raylib.IsKeyPressed(KeyboardKey.Space)||Raylib.IsMouseButtonPressed(MouseButton.Right))
+    if (Raylib.IsKeyPressed(KeyboardKey.Space)||Raylib.IsMouseButtonPressed(MouseButton.Right))//Toggle Flags on Space/RightClick
     {
         if (PlayerKnownMap[(int)CursorPos.X,(int)CursorPos.Y]==11)
         {
@@ -127,7 +125,7 @@ while(!Raylib.WindowShouldClose()&&playing)
             FlagPositions.Remove(((int,int))(CursorPos.X, CursorPos.Y));
         }
     }
-    if (Raylib.GetMouseDelta().Length()!=0)
+    if (Raylib.GetMouseDelta().Length()!=0)//Set CursorPos to the position of the mouse whenever the mouse moves
     {
         CursorPos=Raylib.GetMousePosition()/25;
     }
@@ -140,16 +138,13 @@ while(!Raylib.WindowShouldClose()&&playing)
 if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY)
 {
     //WIN
-    
 }
 else
 {
-
     //LOSE
-    
 }
 
-void RevealSquare(int XPos, int YPos)//Reveals the selected square, rerunning on adjacent squares if it's a 0
+void RevealSquare(int XPos, int YPos)//Reveals the selected square, rerunning on adjacent squares if they are a 0
 {
     if (!SquaresRevealed.Contains((XPos, YPos))&&MineDetection(MinePositions, XPos,YPos)!=9)//Dont add to SquaresRevealed if it already contains it
     {
@@ -176,7 +171,7 @@ void RevealSquare(int XPos, int YPos)//Reveals the selected square, rerunning on
         playing=false;
     }
 }
-int MineDetection(List<(int,int)> MinePositions, int XPos, int YPos)//Looks for mines in the surrounding 8 tiles
+int MineDetection(List<(int,int)> MinePositions, int XPos, int YPos)//Looks for mines in the surrounding 8 tiles. returns 9 if chosen square is a mine
 {
     int output=0;
     if (MinePositions.Contains((XPos,YPos)))
