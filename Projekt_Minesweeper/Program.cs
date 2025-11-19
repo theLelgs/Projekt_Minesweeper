@@ -22,18 +22,20 @@ Console.WriteLine($"Choose a map width. Maximum width is {MaxWidth/25-1}, and th
 int MaxX;
 int MaxY;
 int Minecount;
-string WidthString = Console.ReadLine();
 
+string WidthString = Console.ReadLine();
 while (!int.TryParse(WidthString, out MaxX)||MaxX>MaxWidth/25-1||MaxX<10) //Make sure the amount chosen is withing certain limits and a number
 {
     WidthString = Console.ReadLine();
 }
+
 Console.WriteLine($"Choose a map height. Maximum width is {MaxHeight/25-1}, and the minimum is 1");  //Make sure the amount chosen is withing certain limits and a number
 string HeightString = Console.ReadLine();
 while (!int.TryParse(HeightString, out MaxY)||MaxY>MaxHeight/25-1||MaxY<1)
 {
     HeightString = Console.ReadLine();
 }
+
 Console.WriteLine($"Choose a number of mines. Maximum is {MaxX*MaxY} and the minimum is 1");  //Make sure the amount chosen is withing certain limits and a number
 string Minestring = Console.ReadLine();
 while (!int.TryParse(Minestring, out Minecount)||Minecount<1)
@@ -42,42 +44,41 @@ while (!int.TryParse(Minestring, out Minecount)||Minecount<1)
 }
 
 
-Raylib.InitWindow(25*MaxX,25*MaxY,"MineSweeper");
-Raylib.SetTargetFPS(60);
 
-
-int[,] Map = new int[MaxX, MaxY];
+Texture2D[] Sprites = [Raylib.LoadTexture("img/SquareZero.png"),Raylib.LoadTexture("img/SquareOne.png"), Raylib.LoadTexture("img/SquareTwo.png"),Raylib.LoadTexture("img/SquareThree.png"), Raylib.LoadTexture("img/SquareFour.png"), Raylib.LoadTexture("img/SquareFive.png"), Raylib.LoadTexture("img/SquareSix.png"), Raylib.LoadTexture("img/SquareSeven.png"), Raylib.LoadTexture("img/SquareEight.png"), Raylib.LoadTexture("img/SquareMine.png"), Raylib.LoadTexture("img/SquareUnknownFlag.png"), Raylib.LoadTexture("img/SquareUnknown.png")];
 int[,] PlayerKnownMap = new int[MaxX, MaxY];
-for (int y = 0;y<MaxY;y++)
+
+List<(int, int)> FlagPositions = [];
+List<(int,int)> SquaresRevealed = [];
+List<(int,int)> SurroundingSquares= [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)];
+List<(int,int)> MinePositions = [];
+
+Vector2 CursorPos = new(MaxX / 2, MaxY / 2);
+
+for (int a = 0; a < Minecount; a++) //Adds mines equal to the Minecount integer. No duplicates
+{
+    int RandomX = Random.Shared.Next(MaxX);
+    int RandomY = Random.Shared.Next(MaxY);
+    while (MinePositions.Contains((RandomX, RandomY)))
+    {
+        RandomX = Random.Shared.Next(MaxX);
+        RandomY = Random.Shared.Next(MaxY);
+    }
+    MinePositions.Add((RandomX, RandomY));
+}
+for (int y = 0;y<MaxY;y++)//Adds the unknown square to all slots in the player known map
 {
     for (int x = 0; x<MaxX;x++)
     {
         PlayerKnownMap[x,y]=11;
     }
 }
-
-List<(int, int)> FlagPositions = [];
-List<(int,int)> SquaresRevealed = [];
-List<(int,int)> SurroundingSquares= [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)];
-List<(int,int)> MinePositions = [];
-Texture2D[] Sprites = [Raylib.LoadTexture("img/SquareZero.png"),Raylib.LoadTexture("img/SquareOne.png"), Raylib.LoadTexture("img/SquareTwo.png"),Raylib.LoadTexture("img/SquareThree.png"), Raylib.LoadTexture("img/SquareFour.png"), Raylib.LoadTexture("img/SquareFive.png"), Raylib.LoadTexture("img/SquareSix.png"), Raylib.LoadTexture("img/SquareSeven.png"), Raylib.LoadTexture("img/SquareEight.png"), Raylib.LoadTexture("img/SquareMine.png"), Raylib.LoadTexture("img/SquareUnknownFlag.png"), Raylib.LoadTexture("img/SquareUnknown.png")];
-
-
-for (int a = 0; a < Minecount; a++) //Adds mines equal to the Minecount integer. No duplicates
-    {
-        int RandomX = Random.Shared.Next(MaxX);
-        int RandomY = Random.Shared.Next(MaxY);
-        while (MinePositions.Contains((RandomX, RandomY)))
-        {
-            RandomX = Random.Shared.Next(MaxX);
-            RandomY = Random.Shared.Next(MaxY);
-        }
-
-        MinePositions.Add((RandomX, RandomY));
-
-    }
-Vector2 CursorPos = new(MaxX / 2, MaxY / 2);
 bool playing = true;
+
+Raylib.InitWindow(25*MaxX,25*MaxY,"MineSweeper");
+Raylib.SetTargetFPS(60);
+
+
 while(!Raylib.WindowShouldClose()&&playing)
 {
     Raylib.BeginDrawing();
