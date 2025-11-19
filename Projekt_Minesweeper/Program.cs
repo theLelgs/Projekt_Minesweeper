@@ -19,18 +19,18 @@ int MaxWidth = Raylib.GetMonitorWidth(monitor);
 int MaxHeight = Raylib.GetMonitorHeight(monitor);
 Raylib.CloseWindow();
 Console.Clear();
-Console.WriteLine($"Choose a map width. Maximum width is {MaxWidth/25}, and the minimum is 10");
+Console.WriteLine($"Choose a map width. Maximum width is {MaxWidth/25-2}, and the minimum is 10");
 int width;
 int height;
 int Minecount;
 string widthString = Console.ReadLine();
-while (!int.TryParse(widthString, out width)||width>MaxWidth/25||width<10)
+while (!int.TryParse(widthString, out width)||width>MaxWidth/25-2||width<10)
 {
     widthString = Console.ReadLine();
 }
-Console.WriteLine($"Choose a map height. Maximum width is {MaxHeight/25}, and the minimum is 1");
+Console.WriteLine($"Choose a map height. Maximum width is {MaxHeight/25-2}, and the minimum is 1");
 string heightString = Console.ReadLine();
-while (!int.TryParse(heightString, out height)||height>MaxHeight/25||height<1)
+while (!int.TryParse(heightString, out height)||height>MaxHeight/25-2||height<1)
 {
     heightString = Console.ReadLine();
 }
@@ -62,7 +62,7 @@ List<(int, int)> FlagPositions = [];
 List<(int,int)> SquaresRevealed = [];
 List<(int,int)> SurroundingSquares= [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)];
 List<(int,int)> MinePositions = [];
-Texture2D[] Sprites = [Raylib.LoadTexture("img/SquareZero.png"),Raylib.LoadTexture("img/SquareOne.png"), Raylib.LoadTexture("img/SquareTwo.png"),Raylib.LoadTexture("img/SquareThree.png"), Raylib.LoadTexture("imt/SquareFour.png"), Raylib.LoadTexture("img/SquareFive.png"), Raylib.LoadTexture("img/SquareSix.png"), Raylib.LoadTexture("img/SquareSeven.png"), Raylib.LoadTexture("img/SquareEight.png"), Raylib.LoadTexture("img/SquareMine.png"), Raylib.LoadTexture("img/SquareUnknownFlag.png"), Raylib.LoadTexture("img/SquareUnknown.png")];
+Texture2D[] Sprites = [Raylib.LoadTexture("img/SquareZero.png"),Raylib.LoadTexture("img/SquareOne.png"), Raylib.LoadTexture("img/SquareTwo.png"),Raylib.LoadTexture("img/SquareThree.png"), Raylib.LoadTexture("img/SquareFour.png"), Raylib.LoadTexture("img/SquareFive.png"), Raylib.LoadTexture("img/SquareSix.png"), Raylib.LoadTexture("img/SquareSeven.png"), Raylib.LoadTexture("img/SquareEight.png"), Raylib.LoadTexture("img/SquareMine.png"), Raylib.LoadTexture("img/SquareUnknownFlag.png"), Raylib.LoadTexture("img/SquareUnknown.png")];
 
 
 for (int a = 0; a < Minecount; a++) //Adds mines equal to the Minecount integer. No duplicates
