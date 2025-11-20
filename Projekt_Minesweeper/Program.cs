@@ -9,28 +9,34 @@ using Raylib_cs;
 //10 = Flag
 //11 = Unknown
 
+//TODO:
+//Add Win/Lose screen
+//Allow for looping
+
+
+
 //Getting the monitor size to calculate the maximum of mines that can fit on screen
 Raylib.InitWindow(0,0,"Temporary"); //I could only get monitor width/height on a screen with an active window
-int MaxWidth = Raylib.GetMonitorWidth(0);// Get monitor width from monitor 0
-int MaxHeight = Raylib.GetMonitorHeight(0);
+int MonitorWidth = Raylib.GetMonitorWidth(0);// Get monitor width from monitor 0
+int MonitorHeight = Raylib.GetMonitorHeight(0);
 Raylib.CloseWindow();
 
 //Allow user to choose the size of the board and the amount of mines.
 Console.Clear();
-Console.WriteLine($"Choose a map width. Maximum width is {MaxWidth/25-1}, and the minimum is 10");//Added buffer of one to prevent mouse offset
+Console.WriteLine($"Choose a map width. Maximum width is {MonitorWidth/25-1}, and the minimum is 10");//Added buffer of one to prevent mouse offset
 int MaxX;
 int MaxY;
 int Minecount;
 
 string WidthString = Console.ReadLine();
-while (!int.TryParse(WidthString, out MaxX)||MaxX>MaxWidth/25-1||MaxX<10) //Make sure the amount chosen is withing certain limits and a number
+while (!int.TryParse(WidthString, out MaxX)||MaxX>MonitorWidth/25-1||MaxX<10) //Make sure the amount chosen is withing certain limits and a number
 {
     WidthString = Console.ReadLine();
 }
 
-Console.WriteLine($"Choose a map height. Maximum width is {MaxHeight/25-1}, and the minimum is 1");  //Make sure the amount chosen is withing certain limits and a number
+Console.WriteLine($"Choose a map height. Maximum width is {MonitorHeight/25-1}, and the minimum is 1");  //Make sure the amount chosen is withing certain limits and a number
 string HeightString = Console.ReadLine();
-while (!int.TryParse(HeightString, out MaxY)||MaxY>MaxHeight/25-1||MaxY<1)
+while (!int.TryParse(HeightString, out MaxY)||MaxY>MonitorHeight/25-1||MaxY<1)
 {
     HeightString = Console.ReadLine();
 }
@@ -134,20 +140,44 @@ while(!Raylib.WindowShouldClose()&&playing)
     }
     Raylib.EndDrawing(); 
 }
-if (SquaresRevealed.Count+FlagPositions.Count>=MaxX*MaxY)
-{
-    //WIN
-}
-else
-{
-    //LOSE
-}
+
+
 
 void RevealSquare(int XPos, int YPos)//Reveals the selected square, rerunning on adjacent squares if they are a 0
 {
     if (!SquaresRevealed.Contains((XPos, YPos))&&MineDetection(MinePositions, XPos,YPos)!=9)//Dont add to SquaresRevealed if it already contains it
     {
     SquaresRevealed.Add((XPos,YPos));
+    }
+    if (PlayerKnownMap[XPos,YPos]!=11)
+    {
+        int SurroundingFlagCount=0;
+        foreach ((int,int) PositionOffset in SurroundingSquares)
+        {
+            if (FlagPositions.Contains((XPos+PositionOffset.Item1, YPos+PositionOffset.Item2)))
+            {
+                SurroundingFlagCount++;
+            }
+        }
+        if (SurroundingFlagCount==PlayerKnownMap[XPos,YPos])
+        {
+            foreach ((int,int) PositionMod in SurroundingSquares)
+            {
+                if (!(XPos+PositionMod.Item1>MaxX-1||XPos+PositionMod.Item1<0||YPos+PositionMod.Item2>MaxY-1||YPos+PositionMod.Item2<0)&&!SquaresRevealed.Contains((XPos+PositionMod.Item1,YPos+PositionMod.Item2))&&!FlagPositions.Contains((XPos+PositionMod.Item1, YPos+PositionMod.Item2)))
+                {
+                    SquaresRevealed.Add((XPos+PositionMod.Item1,YPos+PositionMod.Item2));
+                    PlayerKnownMap[XPos+PositionMod.Item1,YPos+PositionMod.Item2]=MineDetection(MinePositions, XPos+PositionMod.Item1,YPos+PositionMod.Item2);
+                    if (MineDetection(MinePositions, XPos+PositionMod.Item1, YPos+PositionMod.Item2)==0)
+                    {
+                        RevealSquare(XPos+PositionMod.Item1,YPos+PositionMod.Item2);
+                    }
+                    if (MineDetection(MinePositions, XPos+PositionMod.Item1, YPos+PositionMod.Item2)==9)
+                    {
+                        playing=false;
+                    }
+                }
+            }
+        }
     }
     PlayerKnownMap[XPos,YPos]=MineDetection(MinePositions, XPos,YPos);
     if (MineDetection(MinePositions, XPos, YPos)==0)//Reveal all surrounding squares, rerunning RevealSquare on neighbouring 0
@@ -169,6 +199,7 @@ void RevealSquare(int XPos, int YPos)//Reveals the selected square, rerunning on
     {
         playing=false;
     }
+    
 }
 int MineDetection(List<(int,int)> MinePositions, int XPos, int YPos)//Looks for mines in the surrounding 8 tiles. returns 9 if chosen square is a mine
 {
